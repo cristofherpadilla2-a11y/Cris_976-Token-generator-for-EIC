@@ -88,40 +88,50 @@ const ownerNewMsgInput = document.getElementById('owner-new-msg');
 const ownerStatus = document.getElementById('owner-status');
 const btnCloseModal = document.getElementById('btn-close-modal');
 
-// Initial App Entry Check
+// Initial App Check
 function initApp() {
   if (currentUsername) {
-    firstTimeSection.classList.add('hidden');
-    mainAppWrapper.classList.remove('hidden');
-    headerUsername.textContent = `Welcome ${currentUsername}`;
+    if (firstTimeSection) firstTimeSection.classList.add('hidden');
+    if (mainAppWrapper) mainAppWrapper.classList.remove('hidden');
+    if (headerUsername) headerUsername.textContent = `Welcome ${currentUsername}`;
     navigateTo('menu-section');
     setupPresenceTracking();
   } else {
-    firstTimeSection.classList.remove('hidden');
-    mainAppWrapper.classList.add('hidden');
+    if (firstTimeSection) firstTimeSection.classList.remove('hidden');
+    if (mainAppWrapper) mainAppWrapper.classList.add('hidden');
   }
   checkUsernameChangeState();
 }
 
-// First-Time Form Submission Handler
-firstTimeForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const enteredName = firstTimeInput.value.trim();
-
-  if (enteredName !== "") {
-    currentUsername = enteredName;
-    localStorage.setItem('app_username', currentUsername);
-
-    // Hide input screen, reveal main application wrapper
-    firstTimeSection.classList.add('hidden');
-    mainAppWrapper.classList.remove('hidden');
-    headerUsername.textContent = `Welcome ${currentUsername}`;
-
-    // Show menu screen & sync with Firebase
-    navigateTo('menu-section');
-    setupPresenceTracking();
+// Global Navigation Function
+function navigateTo(targetId) {
+  screens.forEach(s => s.classList.add('hidden'));
+  const target = document.getElementById(targetId);
+  if (target) {
+    target.classList.remove('hidden');
   }
-});
+}
+
+// First-Time Form Handler (Triggers on Enter or Click)
+if (firstTimeForm) {
+  firstTimeForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const enteredName = firstTimeInput.value.trim();
+
+    if (enteredName !== "") {
+      currentUsername = enteredName;
+      localStorage.setItem('app_username', currentUsername);
+
+      // Hide input overlay & reveal menu immediately
+      firstTimeSection.classList.add('hidden');
+      mainAppWrapper.classList.remove('hidden');
+      headerUsername.textContent = `Welcome ${currentUsername}`;
+
+      navigateTo('menu-section');
+      setupPresenceTracking();
+    }
+  });
+}
 
 // Firebase Realtime Data Listeners
 database.ref('tokenData').on('value', (snapshot) => {
@@ -139,6 +149,7 @@ database.ref('whitelistedUsers').on('value', (snapshot) => {
 });
 
 database.ref('chatMessages').limitToLast(50).on('value', (snapshot) => {
+  if (!chatBox) return;
   chatBox.innerHTML = '';
   const messages = snapshot.val();
   if (messages) {
@@ -204,7 +215,7 @@ function renderUsersList(targetContainer) {
   const usersArray = Object.values(allUsersData);
 
   if (usersArray.length === 0) {
-    targetContainer.innerHTML = '<p class="status-user-item">No users online.</p>';
+    targetContainer.innerHTML = '<p class="status-user-item">No users found.</p>';
     return;
   }
 
@@ -224,7 +235,7 @@ function renderUsersList(targetContainer) {
   });
 }
 
-// Whitelist & Cooldown Status
+// Cooldown Control
 function isUserWhitelisted() {
   return isOwnerAuthenticated || whitelistedUsers.includes(currentUsername);
 }
@@ -246,8 +257,8 @@ function checkCooldownState() {
 }
 
 function startCooldownTimer(remainingTime) {
-  btnGenCode.disabled = true;
-  btnGenToken.disabled = true;
+  if (btnGenCode) btnGenCode.disabled = true;
+  if (btnGenToken) btnGenToken.disabled = true;
 
   clearInterval(cooldownInterval);
 
@@ -258,8 +269,8 @@ function startCooldownTimer(remainingTime) {
     const secs = remainingSeconds % 60;
     const formattedSecs = secs < 10 ? `0${secs}` : secs;
 
-    btnGenCode.textContent = `Wait (${mins}:${formattedSecs})`;
-    btnGenToken.textContent = `Wait (${mins}:${formattedSecs})`;
+    if (btnGenCode) btnGenCode.textContent = `Wait (${mins}:${formattedSecs})`;
+    if (btnGenToken) btnGenToken.textContent = `Wait (${mins}:${formattedSecs})`;
 
     if (remainingSeconds <= 0) {
       clearInterval(cooldownInterval);
@@ -274,107 +285,102 @@ function startCooldownTimer(remainingTime) {
 
 function enableButtons() {
   clearInterval(cooldownInterval);
-  btnGenCode.disabled = false;
-  btnGenToken.disabled = false;
-  btnGenCode.textContent = "Generate Code";
-  btnGenToken.textContent = "Generate Token";
+  if (btnGenCode) {
+    btnGenCode.disabled = false;
+    btnGenCode.textContent = "Generate Code";
+  }
+  if (btnGenToken) {
+    btnGenToken.disabled = false;
+    btnGenToken.textContent = "Generate Token";
+  }
 }
 
-// Username Limit Tracking
 function checkUsernameChangeState() {
   if (hasChangedUsername) {
-    btnToName.disabled = true;
-    btnToName.textContent = "Username Changed (Limit Reached)";
-    nameInput.disabled = true;
-    btnSaveName.disabled = true;
-    btnSaveName.textContent = "Already Changed";
+    if (btnToName) {
+      btnToName.disabled = true;
+      btnToName.textContent = "Username Changed (Limit Reached)";
+    }
+    if (nameInput) nameInput.disabled = true;
+    if (btnSaveName) {
+      btnSaveName.disabled = true;
+      btnSaveName.textContent = "Already Changed";
+    }
   }
 }
 
-// Global Screen Navigation Handler
-function navigateTo(targetId) {
-  screens.forEach(s => s.classList.add('hidden'));
-  const target = document.getElementById(targetId);
-  if (target) {
-    target.classList.remove('hidden');
-  }
-}
-
-btnToDashboard.addEventListener('click', () => navigateTo('dash-section'));
-btnToLeaderboard.addEventListener('click', () => {
+// Menu Navigation Listeners
+if (btnToDashboard) btnToDashboard.addEventListener('click', () => navigateTo('dash-section'));
+if (btnToLeaderboard) btnToLeaderboard.addEventListener('click', () => {
   renderUsersList(leaderboardList);
   navigateTo('leaderboard-section');
 });
-btnToChat.addEventListener('click', () => navigateTo('chat-section'));
-btnToName.addEventListener('click', () => {
-  if (!hasChangedUsername) {
-    navigateTo('name-section');
-  }
+if (btnToChat) btnToChat.addEventListener('click', () => navigateTo('chat-section'));
+if (btnToName) btnToName.addEventListener('click', () => {
+  if (!hasChangedUsername) navigateTo('name-section');
 });
 
 backBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    navigateTo(btn.dataset.target);
+  btn.addEventListener('click', () => navigateTo(btn.dataset.target));
+});
+
+// Save Username Form
+if (nameForm) {
+  nameForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (hasChangedUsername) return;
+
+    const newName = nameInput.value.trim();
+    if (newName) {
+      currentUsername = newName;
+      hasChangedUsername = true;
+
+      localStorage.setItem('app_username', currentUsername);
+      localStorage.setItem('has_changed_username', 'true');
+
+      database.ref(`users/${userId}`).update({
+        username: currentUsername,
+        hasChangedName: true
+      });
+
+      headerUsername.textContent = `Welcome ${currentUsername}`;
+      nameInput.value = '';
+
+      checkUsernameChangeState();
+      checkCooldownState();
+      navigateTo('menu-section');
+    }
   });
-});
+}
 
-// Rename Form Handler
-nameForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  if (hasChangedUsername) return;
-
-  const newName = nameInput.value.trim();
-  if (newName) {
-    currentUsername = newName;
-    hasChangedUsername = true;
-
-    localStorage.setItem('app_username', currentUsername);
-    localStorage.setItem('has_changed_username', 'true');
-
-    database.ref(`users/${userId}`).update({
-      username: currentUsername,
-      hasChangedName: true
-    });
-
-    headerUsername.textContent = `Welcome ${currentUsername}`;
-    nameInput.value = '';
-
-    checkUsernameChangeState();
-    checkCooldownState();
-    navigateTo('menu-section');
-  }
-});
-
-// Presence Modals
+// Active Users Modal
 if (btnActiveModal) {
   btnActiveModal.addEventListener('click', () => {
     renderUsersList(usersList);
     usersModal.classList.remove('hidden');
   });
 }
-
 if (btnCloseUsersModal) {
-  btnCloseUsersModal.addEventListener('click', () => {
-    usersModal.classList.add('hidden');
+  btnCloseUsersModal.addEventListener('click', () => usersModal.classList.add('hidden'));
+}
+
+// Global Chat Form
+if (chatForm) {
+  chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = chatInput.value.trim();
+    if (text) {
+      database.ref('chatMessages').push({
+        user: currentUsername,
+        text: text,
+        timestamp: Date.now()
+      });
+      chatInput.value = '';
+    }
   });
 }
 
-// Global Chat
-chatForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const text = chatInput.value.trim();
-  if (text) {
-    database.ref('chatMessages').push({
-      user: currentUsername,
-      text: text,
-      timestamp: Date.now()
-    });
-    chatInput.value = '';
-  }
-});
-
-// Code / Token Generators
+// Generators
 function generateRandomString(length) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let res = '';
@@ -419,25 +425,23 @@ function handleGeneration(type) {
   }, 1000);
 }
 
-btnGenCode.addEventListener('click', () => handleGeneration('code'));
-btnGenToken.addEventListener('click', () => handleGeneration('token'));
+if (btnGenCode) btnGenCode.addEventListener('click', () => handleGeneration('code'));
+if (btnGenToken) btnGenToken.addEventListener('click', () => handleGeneration('token'));
 
-btnChangeCodeMsg.addEventListener('click', () => {
+if (btnChangeCodeMsg) btnChangeCodeMsg.addEventListener('click', () => {
   targetOwnerTarget = 'code';
   openOwnerModal();
 });
-
-btnChangeTokenMsg.addEventListener('click', () => {
+if (btnChangeTokenMsg) btnChangeTokenMsg.addEventListener('click', () => {
   targetOwnerTarget = 'token';
   openOwnerModal();
 });
-
-btnCooldownList.addEventListener('click', () => {
+if (btnCooldownList) btnCooldownList.addEventListener('click', () => {
   targetOwnerTarget = 'whitelist';
   openOwnerModal();
 });
 
-// Owner Modal Logic
+// Owner Modal
 function openOwnerModal() {
   ownerModal.classList.remove('hidden');
   dashSection.classList.add('hidden');
@@ -470,53 +474,56 @@ function openOwnerPanel() {
   enableButtons();
 }
 
-btnCloseModal.addEventListener('click', () => {
-  ownerModal.classList.add('hidden');
-  dashSection.classList.remove('hidden');
-  ownerPassInput.value = '';
-});
+if (btnCloseModal) {
+  btnCloseModal.addEventListener('click', () => {
+    ownerModal.classList.add('hidden');
+    dashSection.classList.remove('hidden');
+    ownerPassInput.value = '';
+  });
+}
 
-ownerForm.addEventListener('submit', (e) => {
-  e.preventDefault();
+if (ownerForm) {
+  ownerForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-  if (!isOwnerAuthenticated) {
-    if (ownerPassInput.value === OWNER_PASSWORD) {
-      isOwnerAuthenticated = true;
-      ownerStatus.style.color = "#2ea44f";
-      ownerStatus.textContent = "Access Granted!";
-
-      setTimeout(() => {
-        openOwnerPanel();
-      }, 800);
-    } else {
-      ownerStatus.style.color = "#f85149";
-      ownerStatus.textContent = "Incorrect password!";
-    }
-  } else {
-    const inputValue = ownerNewMsgInput.value.trim();
-    if (inputValue !== "") {
-      if (targetOwnerTarget === 'whitelist') {
-        database.ref('whitelistedUsers').push(inputValue);
+    if (!isOwnerAuthenticated) {
+      if (ownerPassInput.value === OWNER_PASSWORD) {
+        isOwnerAuthenticated = true;
         ownerStatus.style.color = "#2ea44f";
-        ownerStatus.textContent = `Added '${inputValue}' to 0sec list!`;
-      } else if (targetOwnerTarget === 'code') {
-        database.ref('tokenData').update({ codeOutput: inputValue });
-        ownerStatus.style.color = "#2ea44f";
-        ownerStatus.textContent = "Saved permanently online!";
+        ownerStatus.textContent = "Access Granted!";
+
+        setTimeout(() => openOwnerPanel(), 800);
       } else {
-        database.ref('tokenData').update({ tokenOutput: inputValue });
-        ownerStatus.style.color = "#2ea44f";
-        ownerStatus.textContent = "Saved permanently online!";
+        ownerStatus.style.color = "#f85149";
+        ownerStatus.textContent = "Incorrect password!";
       }
+    } else {
+      const inputValue = ownerNewMsgInput.value.trim();
+      if (inputValue !== "") {
+        if (targetOwnerTarget === 'whitelist') {
+          database.ref('whitelistedUsers').push(inputValue);
+          ownerStatus.style.color = "#2ea44f";
+          ownerStatus.textContent = `Added '${inputValue}' to 0sec list!`;
+        } else if (targetOwnerTarget === 'code') {
+          database.ref('tokenData').update({ codeOutput: inputValue });
+          ownerStatus.style.color = "#2ea44f";
+          ownerStatus.textContent = "Saved permanently online!";
+        } else 
+          database.ref('tokenData').update({ tokenOutput: inputValue });
+          ownerStatus.style.color = "#2ea44f";
+          ownerStatus.textContent = "Saved permanently online!";
+        }
 
-      setTimeout(() => {
-        ownerModal.classList.add('hidden');
-        dashSection.classList.remove('hidden');
-        ownerNewMsgInput.value = "";
-      }, 1000);
+        setTimeout(() => {
+          ownerModal.classList.
+          add('hidden');
+          dashSection.classList.remove('hidden');
+          ownerNewMsgInput.value = "";
+        }, 1000);
+      }
     }
-  }
-});
+  });
+}
 
-// Run Init Check
+// Start app
 initApp();
