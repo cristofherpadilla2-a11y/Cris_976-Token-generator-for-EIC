@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cris_976 Token Generator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Moving Galaxy Background -->
+  <div class="galaxy-background"></div>
+  <div class="stars-background"></div>
+
+  <div class="app-container">
+
+    <!-- Active Presence Header Banner -->
+    <div class="presence-bar">
+      <button id="btn-active-modal" class="active-banner-btn">
+        <span class="active-label">Active:</span> 
+        <span id="active-count">0</span> | 
+        <span class="inactive-label">Inactive:</span> 
+        <span id="inactive-count">0</span>
+      </button>
+    </div>
+
+    <!-- HOMEPAGE SCREEN -->
+    <section id="menu-section" class="screen">
+      <header class="title-pill">
+        <h1>Welcome to cris_976</h1>
+        <h2>Token Generator</h2>
+        <h2>Website 👌</h2>
+      </header>
+
+      <nav class="pill-container">
+        <button id="btn-to-dashboard" class="pill-btn">go To dashboard</button>
+        <button id="btn-to-chat" class="pill-btn">Global Chat 💬</button>
+        <button id="btn-to-leaderboard" class="pill-btn">Leaderboard</button>
+        <button id="btn-to-name" class="pill-btn">Change Username</button>
+        <a href="https://discord.gg/9auXgRgwd" target="_blank" class="pill-btn discord-btn">join the discord</a>
+      </nav>
+
+      <footer class="credit-tag">
+        Website by cris_976
+      </footer>
+    </section>
+
+    <!-- DASHBOARD SCREEN -->
+    <section id="dash-section" class="screen hidden">
+      <button class="back-btn" data-target="menu-section">← Back to Menu</button>
+
+      <div class="dash-card">
+        <div class="dash-header-bar">
+          <h1>Token bot by: Cris_976</h1>
+        </div>
+        
+        <div class="double-line"></div>
+
+        <div class="dash-instructions">
+          <p>Click on “Generate Token code” For the token code</p>
+          <p>Click on “Generate Token” For the Refresh part of the token</p>
+        </div>
+
+        <div class="status-pill-wrapper">
+          <div id="status-pill" class="status-pill">
+            Generating Token for <span id="header-username">User</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2x2 Grid Buttons -->
+      <div class="grid-container">
+        <button id="btn-gen-code" class="grid-btn blue-btn">
+          Generate token code
+        </button>
+        
+        <button id="btn-gen-token" class="grid-btn green-btn">
+          Generate Token
+        </button>
+        
+        <button id="btn-change-code-msg" class="grid-btn green-btn">
+          Change “Generate Token code message” (owner use only)
+        </button>
+        
+        <button id="btn-change-token-msg" class="grid-btn blue-btn">
+          Change “Generate Token message” (Owner use only)
+        </button>
+      </div>
+
+      <button id="btn-cooldown-list" class="pill-btn action-btn" style="margin-top: 12px;">0sec-cooldown list</button>
+
+      <div id="gen-display" class="display-box hidden">
+        <p id="gen-status">Generating...</p>
+        <div id="gen-result" class="result-text"></div>
+      </div>
+    </section>
+
+    <!-- LEADERBOARD SCREEN -->
+    <section id="leaderboard-section" class="screen hidden">
+      <button class="back-btn" data-target="menu-section">← Back to Menu</button>
+      <h2>Leaderboard</h2>
+      <div id="leaderboard-list" class="status-list-container"></div>
+    </section>
+
+    <!-- GLOBAL CHAT SCREEN -->
+    <section id="chat-section" class="screen hidden">
+      <button class="back-btn" data-target="menu-section">← Back to Menu</button>
+      <h2>Global Chat 💬</h2>
+      <div id="chat-box" class="chat-display"></div>
+      
+      <form id="chat-form" class="chat-input-container">
+        <input type="text" id="chat-input" placeholder="Type a message..." required autocomplete="off">
+        <button type="submit" class="grid-btn green-btn send-btn">Send</button>
+      </form>
+    </section>
+
+    <!-- CHANGE USERNAME SCREEN -->
+    <section id="name-section" class="screen hidden">
+      <button class="back-btn" data-target="menu-section">← Back to Menu</button>
+      <h2>Change Username</h2>
+      <form id="name-form" class="form-container">
+        <input type="text" id="name-input" placeholder="Enter new username" required autocomplete="off">
+        <button type="submit" id="btn-save-name" class="pill-btn action-btn">Save Name</button>
+      </form>
+    </section>
+
+    <!-- ACTIVE USERS MODAL -->
+    <div id="users-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>User Status</h3>
+        <div id="users-list" class="status-list-container"></div>
+        <div class="modal-actions">
+          <button type="button" id="btn-close-users-modal" class="pill-btn cancel-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OWNER CONTROLS MODAL -->
+    <div id="owner-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="modal-title">Owner Controls</h3>
+
+        <form id="owner-form">
+          <input type="password" id="owner-pass" placeholder="Enter Owner Passcode">
+
+          <div id="owner-override-field" class="hidden">
+            <input type="text" id="owner-new-msg" placeholder="Enter custom output">
+          </div>
+
+          <p id="owner-status"></p>
+
+          <div class="modal-actions">
+            <button type="submit" class="pill-btn action-btn">Submit</button>
+            <button type="button" id="btn-close-modal" class="pill-btn cancel-btn">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  
+  <script src="script.js"></script>
+</body>
+</html>
