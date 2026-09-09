@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E Clicker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0B0F0C;
+      color: #00FF66;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin: 10px 0;
+      text-shadow: 0 0 10px #00FF66;
+      letter-spacing: 2px;
+    }
+
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .game-section {
+      flex: 1;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stats-container {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .score-display {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 0 0 8px #00FF66;
+    }
+
+    .cps-display {
+      font-size: 1.2rem;
+      color: #A0FFA0;
+      margin-top: 5px;
+    }
+
+    .clicker-container {
+      position: relative;
+      margin: 15px 0;
+    }
+
+    .click-target {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      border: 4px solid #00FF66;
+      box-shadow: 0 0 25px rgba(0, 255, 102, 0.5);
+      cursor: pointer;
+      transition: transform 0.05s ease-in-out;
+      object-fit: cover;
+    }
+
+    .click-target:active {
+      transform: scale(0.92);
+    }
+
+    .float-text {
+      position: absolute;
+      color: #00FF66;
+      font-weight: bold;
+      font-size: 1.8rem;
+      pointer-events: none;
+      animation: floatUp 0.8s ease-out forwards;
+      text-shadow: 0 0 6px #000;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-80px) scale(1.3);
+      }
+    }
+
+    .panel {
+      width: 100%;
+      background: rgba(0, 255, 102, 0.05);
+      border: 1px solid rgba(0, 255, 102, 0.2);
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 10px;
+    }
+
+    .panel-title {
+      text-align: center;
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      border-bottom: 1px solid rgba(0, 255, 102, 0.3);
+      padding-bottom: 5px;
+    }
+
+    .upgrade-btn {
+      width: 100%;
+      background: #141E17;
+      border: 2px solid #00FF66;
+      color: #ffffff;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .upgrade-btn:hover:not(:disabled) {
+      background: #00FF66;
+      color: #000000;
+      font-weight: bold;
+    }
+
+    .upgrade-btn:disabled {
+      opacity: 0.4;
+      border-color: #555555;
+      cursor: not-allowed;
+    }
+
+    .leaderboard-section {
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .leaderboard-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #141E17;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      border-left: 3px solid #00FF66;
+    }
+
+    .username-input {
+      width: 100%;
+      padding: 8px;
+      background: #141E17;
+      border: 1px solid #00FF66;
+      color: #fff;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .username-input:disabled {
+      opacity: 0.6;
+      border-color: #555555;
+      cursor: not-allowed;
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // PASTE YOUR FIREBASE KEYS HERE
+    const firebaseConfig = {
+      apiKey: "AIzaSyBgGd4dstPXvjLfkjzvit8e11bvcqk0yKM",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "1:668379465130:web:a4fe4b2d1ab4258fbb97d3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let playerId = localStorage.getItem('e_clicker_player_id') || 'player_' + Math.random().toString(36).substring(2, 9);
+    localStorage.setItem('e_clicker_player_id', playerId);
+
+    const usernameInput = document.getElementById('usernameInput');
+    const savedUsername = localStorage.getItem('e_clicker_username');
+    const isNameLocked = localStorage.getItem('e_clicker_name_locked');
+
+    if (savedUsername) {
+      usernameInput.value = savedUsername;
+    }
+
+    if (isNameLocked === 'true') {
+      usernameInput.disabled = true;
+    }
+
+    usernameInput.addEventListener('change', () => {
+      const newName = usernameInput.value.trim();
+      if (newName !== '') {
+        localStorage.setItem('e_clicker_username', newName);
+        localStorage.setItem('e_clicker_name_locked', 'true');
+        usernameInput.disabled = true;
+        saveScoreToCloud();
+      }
+    });
+
+    async function saveScoreToCloud() {
+      const username = usernameInput.value || 'Anonymous';
+      try {
+        await setDoc(doc(db, "leaderboard", playerId), {
+          username: username,
+          score: Math.floor(window.gameScore),
+          updatedAt: new Date()
+        });
+      } catch (e) {
+        console.error("Error saving score: ", e);
+      }
+    }
+
+    async function fetchLeaderboard() {
+      try {
+        const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(10));
+        const querySnapshot = await getDocs(q);
+        const listEl = document.getElementById('leaderboardList');
+        listEl.innerHTML = '';
+
+        let rank = 1;
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const li = document.createElement('li');
+          li.className = 'leaderboard-item';
+          li.innerHTML = `<span>#${rank} ${data.username}</span> <strong>${data.score} E</strong>`;
+          listEl.appendChild(li);
+          rank++;
+        });
+      } catch (e) {
+        console.error("Error fetching leaderboard: ", e);
+      }
+    }
+
+    // Set intervals to 5 seconds (5000ms)
+    setInterval(saveScoreToCloud, 5000);
+    setInterval(fetchLeaderboard, 5000);
+    fetchLeaderboard();
+  </script>
+</head>
+<body>
+
+  <h1>E CLICKER</h1>
+
+  <div class="main-layout">
+    <div class="game-section">
+      <div class="stats-container">
+        <div class="score-display"><span id="score">0</span> E</div>
+        <div class="cps-display"><span id="cps">0</span> E / sec</div>
+      </div>
+
+      <div class="clicker-container" id="clickArea">
+        <img 
+          src="https://instasize.com/api/image/d552497648af7f20626f807e64481fd0c417fa28d6916753eab603d2c64328fc.jpeg" 
+          alt="E Cat" 
+          class="click-target" 
+          id="catBtn"
+        >
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Upgrades</div>
+        <button class="upgrade-btn" id="buyClicker" disabled>
+          <div>
+            <div>Update apk beggars</div>
+            <small style="color:#aaa">+1 E per second</small>
+          </div>
+          <div><span id="costClicker">15</span> E</div>
+        </button>
+
+        <button class="upgrade-btn" id="buyPower" disabled>
+          <div>
+            <div>E Power Boost</div>
+            <small style="color:#aaa">+1 per click</small>
+          </div>
+          <div><span id="costPower">50</span> E</div>
+        </button>
+
+        <button class="upgrade-btn" id="buyFactory" disabled>
+          <div>
+            <div>E Generator</div>
+            <small style="color:#aaa">+10 E per second</small>
+          </div>
+          <div><span id="costFactory">500</span> E</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="leaderboard-section">
+      <div class="panel">
+        <div class="panel-title">Live Leaderboard (Auto 5s)</div>
+        <input type="text" id="usernameInput" class="username-input" placeholder="Type your Discord name" maxlength="15">
+        <ol class="leaderboard-list" id="leaderboardList">
+          <li class="leaderboard-item"><span>Loading...</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.gameScore = parseFloat(localStorage.getItem('e_clicker_score')) || 0;
+    let clickValue = parseInt(localStorage.getItem('e_clicker_clickValue')) || 1;
+    let autoCps = parseInt(localStorage.getItem('e_clicker_autoCps')) || 0;
+
+    let costClicker = parseInt(localStorage.getItem('e_clicker_costClicker')) || 15;
+    let costPower = parseInt(localStorage.getItem('e_clicker_costPower')) || 50;
+    let costFactory = parseInt(localStorage.getItem('e_clicker_costFactory')) || 500;
+
+    const scoreEl = document.getElementById('score');
+    const cpsEl = document.getElementById('cps');
+    const catBtn = document.getElementById('catBtn');
+    const clickArea = document.getElementById('clickArea');
+
+    const buyClickerBtn = document.getElementById('buyClicker');
+    const buyPowerBtn = document.getElementById('buyPower');
+    const buyFactoryBtn = document.getElementById('buyFactory');
+
+    function saveProgressLocally() {
+      localStorage.setItem('e_clicker_score', window.gameScore);
+      localStorage.setItem('e_clicker_clickValue', clickValue);
+      localStorage.setItem('e_clicker_autoCps', autoCps);
+      localStorage.setItem('e_clicker_costClicker', costClicker);
+      localStorage.setItem('e_clicker_costPower', costPower);
+      localStorage.setItem('e_clicker_costFactory', costFactory);
+    }
+
+    catBtn.addEventListener('click', (e) => {
+      window.gameScore += clickValue;
+      updateDisplay();
+      spawnFloatingText(e);
+      saveProgressLocally();
+    });
+
+    function spawnFloatingText(event) {
+      const float = document.createElement('div');
+      float.className = 'float-text';
+      float.innerText = `+${clickValue}`;
+      const rect = clickArea.getBoundingClientRect();
+      float.style.left = `${event.clientX - rect.left - 20}px`;
+      float.style.top = `${event.clientY - rect.top - 20}px`;
+      clickArea.appendChild(float);
+      setTimeout(() => float.remove(), 800);
+    }
+
+    buyClickerBtn.addEventListener('click', () => {
+      if (window.gameScore >= costClicker) {
+        window.gameScore -= costClicker;
+        autoCps += 1;
+        costClicker = Math.floor(costClicker * 1.15);
+        updateDisplay();
+        saveProgressLocally();
+      }
+    });
+
+    buyPowerBtn.addEventListener('click', () => {
+      if (window.gameScore >= costPower) {
+        window.gameScore -= costPower;
+        clickValue += 1;
+        costPower = Math.floor(costPower * 1.25);
+        updateDisplay();
+        saveProgressLocally();
+      }
+    });
+
+    buyFactoryBtn.addEventListener('click', () => {
+      if (window.gameScore >= costFactory) {
+        window.gameScore -= costFactory;
+        autoCps += 10;
+        costFactory = Math.floor(costFactory * 1.2);
+        updateDisplay();
+        saveProgressLocally();
+      }
+    });
+
+    setInterval(() => {
+      window.gameScore += autoCps;
+      updateDisplay();
+      saveProgressLocally();
+    }, 1000);
+
+    function updateDisplay() {
+      scoreEl.innerText = Math.floor(window.gameScore);
+      cpsEl.innerText = autoCps;
+      document.getElementById('costClicker').innerText = costClicker;
+      document.getElementById('costPower').innerText = costPower;
+      document.getElementById('costFactory').innerText = costFactory;
+
+      buyClickerBtn.disabled = window.gameScore < costClicker;
+      buyPowerBtn.disabled = window.gameScore < costPower;
+      buyFactoryBtn.disabled = window.gameScore < costFactory;
+    }
+
+    updateDisplay();
+  </script>
+</body>
+</html>
